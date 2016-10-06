@@ -38,6 +38,7 @@ import android.telephony.PhoneNumberUtils;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import android.suda.utils.SudaUtils;
 import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.ListAdapter;
@@ -97,6 +98,8 @@ public class CallCardPresenter extends Presenter<CallCardPresenter.CallCardUi>
     private boolean mHasShownToast = false;
     private InCallContactInteractions mInCallContactInteractions;
     private boolean mIsFullscreen = false;
+
+    private static boolean isSupportLanguage;
 
     public static class ContactLookupCallback implements ContactInfoCacheCallback {
         private final WeakReference<CallCardPresenter> mCallCardPresenter;
@@ -199,6 +202,9 @@ public class CallCardPresenter extends Presenter<CallCardPresenter.CallCardUi>
         InCallPresenter.getInstance().addIncomingCallListener(this);
         InCallPresenter.getInstance().addDetailsListener(this);
         InCallPresenter.getInstance().addInCallEventListener(this);
+
+        isSupportLanguage = SudaUtils.isSupportLanguage(true);
+
     }
 
     @Override
@@ -912,7 +918,9 @@ public class CallCardPresenter extends Presenter<CallCardPresenter.CallCardUi>
                     number,
                     name,
                     nameIsNumber,
-                    isChildNumberShown || isCallSubjectShown ? null : mPrimaryContactInfo.label,
+                    isChildNumberShown || isCallSubjectShown ? null : isSupportLanguage ? TextUtils.isEmpty(mPrimaryContactInfo.label) ? mPrimaryContactInfo.location :
+                        TextUtils.isEmpty(mPrimaryContactInfo.location) ? mPrimaryContactInfo.label : mPrimaryContactInfo.label + " "
+                            + mPrimaryContactInfo.location : mPrimaryContactInfo.label,
                     mPrimaryContactInfo.photo,
                     mPrimaryContactInfo.isSipCall,
                     showContactPhoto,
@@ -1106,7 +1114,11 @@ public class CallCardPresenter extends Presenter<CallCardPresenter.CallCardUi>
                     contactInfo.nameAlternative,
                     mContactsPreferences);
         if (TextUtils.isEmpty(preferredName)) {
-            return contactInfo.location;
+            if (!isSupportLanguage) {
+                return contactInfo.location;
+            } else {
+                return "";
+            }
         }
         return contactInfo.number;
     }
